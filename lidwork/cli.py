@@ -20,6 +20,8 @@ def main() -> int:
     try:
         if args._apply_helper:
             return _run_apply_helper()
+        if args._install_helper:
+            return _run_install_helper()
         if args.status:
             return run_status()
         if args.setup:
@@ -92,6 +94,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--off", action="store_true", help="Disable keep-awake mode.")
     parser.add_argument("--setup", action="store_true", help="Run one-time privileged setup.")
     parser.add_argument("--_apply-helper", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--_install-helper", action="store_true", help=argparse.SUPPRESS)
     return parser
 
 
@@ -101,6 +104,14 @@ def _run_apply_helper() -> int:
     from lidwork.backends._win_helper import run_apply_helper
 
     return run_apply_helper()
+
+
+def _run_install_helper() -> int:
+    if sys.platform != "win32":
+        raise BackendError("Windows install helper can only run on Windows.")
+    from lidwork.backends.windows import _install_frozen_helper
+
+    return _install_frozen_helper()
 
 
 if __name__ == "__main__":

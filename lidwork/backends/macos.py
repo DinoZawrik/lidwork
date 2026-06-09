@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import getpass
 import os
+import pwd
+import re
 import shlex
 import subprocess
-import tempfile
 from pathlib import Path
 
 from lidwork.backends.base import Backend, BackendError
@@ -46,17 +46,19 @@ class MacOSBackend(Backend):
         return not (_can_run_passwordless_pmset("0") and _can_run_passwordless_pmset("1"))
 
     def setup(self) -> None:
-        content = self._sudoers_content()
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
-            handle.write(content)
-            temp_path = Path(handle.name)
-        command = " && ".join(
+        content = shlex.quote(self._sudoers_content().rstrip("\n"))
+        command = "\n".join(
             [
+                "set -e",
+                "umask 077",
+                'tmp=$(/usr/bin/mktemp)',
+                'trap \'/bin/rm -f "$tmp"\' EXIT',
+                f"printf '%s\\n' {content} > \"$tmp\"",
+                '/usr/sbin/visudo -cf "$tmp"',
                 "/usr/bin/install -d -o root -g wheel -m 0755 /etc/sudoers.d",
-                f"/usr/sbin/visudo -cf {shlex.quote(str(temp_path))}",
                 (
                     "/usr/bin/install -o root -g wheel -m 0440 "
-                    f"{shlex.quote(str(temp_path))} {shlex.quote(str(self._SUDOERS_PATH))}"
+                    f"\"$tmp\" {shlex.quote(str(self._SUDOERS_PATH))}"
                 ),
             ]
         )
@@ -73,8 +75,6 @@ class MacOSBackend(Backend):
             )
         except subprocess.CalledProcessError as exc:
             raise BackendError(exc.stderr.strip() or exc.stdout.strip() or "Setup failed.") from exc
-        finally:
-            temp_path.unlink(missing_ok=True)
 
     def caveats(self) -> list[str]:
         return ["macOS uses pmset disablesleep: this disables all sleep, not only lid sleep."]
@@ -96,7 +96,9 @@ class MacOSBackend(Backend):
 
     @staticmethod
     def _sudoers_content() -> str:
-        user = getpass.getuser()
+        user = pwd.getpwuid(os.getuid()).pw_name
+        if re.fullmatch(r"[A-Za-z0-9._-]+", user) is None:
+            raise BackendError("Resolved macOS username is not safe for sudoers.")
         return (
             f"{user} ALL=(root) NOPASSWD: /usr/bin/pmset -a disablesleep 0, "
             "/usr/bin/pmset -a disablesleep 1\n"
