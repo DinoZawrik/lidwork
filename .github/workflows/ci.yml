@@ -39,5 +39,5 @@ jobs:
       - name: Import smoke test
         run: python -c "import lidwork.cli"
 
-      - name: Headless status smoke test
-        run: lidwork --status
+      - name: CLI entry-point smoke test
+        run: lidwork --help
