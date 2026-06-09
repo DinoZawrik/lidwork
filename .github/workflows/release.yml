@@ -21,8 +21,6 @@ jobs:
         include:
           - os: macos-14
             artifact_label: macos-arm64
-          - os: macos-13
-            artifact_label: macos-x86_64
           - os: ubuntu-22.04
             artifact_label: linux-x86_64
           - os: windows-latest

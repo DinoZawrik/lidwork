@@ -7,9 +7,10 @@ the lid closed" behavior on macOS, Linux, and Windows from one Python codebase.
 
 Prebuilt releases live at: <https://github.com/DinoZawrik/lidwork/releases>
 
-- macOS:
-  Download the `lidwork-macos-*.zip` archive, unzip it, then move `lidwork.app`
-  to `/Applications` or another stable folder before first launch.
+- macOS (Apple Silicon):
+  Download the `lidwork-macos-arm64.zip` archive, unzip it, then move
+  `lidwork.app` to `/Applications` or another stable folder before first launch.
+  Intel Macs are not prebuilt — run from source (see Install below).
 - Windows:
   Download `lidwork-windows-*.exe`, place it in a stable folder first, then run
   it from there. If you later move the exe, run `lidwork.exe --setup` again
