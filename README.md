@@ -3,6 +3,33 @@
 `lidwork` is a small cross-platform tray utility that toggles "keep running with
 the lid closed" behavior on macOS, Linux, and Windows from one Python codebase.
 
+## Download
+
+Prebuilt releases live at: <https://github.com/DinoZawrik/lidwork/releases>
+
+- macOS:
+  Download the `lidwork-macos-*.zip` archive, unzip it, then move `lidwork.app`
+  to `/Applications` or another stable folder before first launch.
+- Windows:
+  Download `lidwork-windows-*.exe`, place it in a stable folder first, then run
+  it from there. If you later move the exe, run `lidwork.exe --setup` again
+  because the scheduled task stores an absolute path.
+- Linux:
+  Download the `lidwork-linux-*.tar.gz` archive, extract it, then run the
+  `lidwork` binary from the extracted folder.
+
+The binaries are unsigned:
+
+- macOS:
+  On first launch, use `right-click -> Open`, or remove quarantine manually:
+
+  ```bash
+  xattr -dr com.apple.quarantine /path/to/lidwork.app
+  ```
+
+- Windows:
+  If SmartScreen appears, use `More info -> Run anyway`.
+
 ## Install
 
 ```bash
@@ -33,6 +60,8 @@ lidwork --setup
   The tray/menu wording is "Keep awake (lid closed OK)" for that reason.
 - One-time setup installs `/etc/sudoers.d/lidwork` so `--on` and `--off` can run
   `pmset` without prompting every time.
+- For launch at login, add `lidwork.app` to `System Settings -> General ->
+  Login Items`.
 
 Setup:
 
@@ -55,6 +84,10 @@ sudo pmset -a disablesleep 0
   still override lid-close behavior. If `lidwork` detects a GNOME/KDE power
   daemon, it warns in the tray/menu and status output. You may also need to set
   lid-close to "Do nothing" in desktop power settings.
+- Best effort only: the release binary expects a tray-capable desktop
+  environment plus AppIndicator/GTK runtime libraries such as
+  `libayatana-appindicator`. Releases are built on Ubuntu 22.04, so older glibc
+  versions may not be compatible.
 
 ### Windows
 
@@ -67,6 +100,11 @@ sudo pmset -a disablesleep 0
 - `--off` restores the exact snapshotted values and re-activates that scheme.
 - If the machine restarts while ON, the saved snapshot remains in the state file
   so `lidwork --off` can still restore it.
+- Put `lidwork.exe` in its long-term folder before running `lidwork --setup`.
+  If the exe moves later, re-run `lidwork --setup` so the scheduled task points
+  at the new path.
+- For launch at login without Task Scheduler changes, place a shortcut to
+  `lidwork.exe` in the user's Startup folder.
 
 If you get stuck ON, you can also restore the lid-close setting manually from
 Windows power settings.
@@ -111,4 +149,5 @@ Windows power settings.
 - `pystray` is known to be weaker on Linux than on macOS/Windows. If Linux tray
   behavior proves flaky in real-world testing, the intended fallback is
   `PySide6`/`QSystemTrayIcon`, but that is not part of v1.
-
+- Release builds are created with PyInstaller. Source installs only need
+  `pystray` and `Pillow`; `pyinstaller` is build-time only.

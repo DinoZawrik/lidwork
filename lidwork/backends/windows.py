@@ -133,7 +133,7 @@ def run_apply_helper() -> int:
 
 
 def _build_task_xml() -> str:
-    python_executable = escape(str(Path(sys.executable)))
+    command, arguments = _task_command_and_arguments()
     user_id = escape(_task_user_id())
     return dedent(
         f"""\
@@ -159,13 +159,20 @@ def _build_task_xml() -> str:
           </Settings>
           <Actions Context="Author">
             <Exec>
-              <Command>{python_executable}</Command>
-              <Arguments>-m lidwork.cli --_apply-helper</Arguments>
+              <Command>{escape(command)}</Command>
+              <Arguments>{escape(arguments)}</Arguments>
             </Exec>
           </Actions>
         </Task>
         """
     )
+
+
+def _task_command_and_arguments() -> tuple[str, str]:
+    executable = str(Path(sys.executable))
+    if getattr(sys, "frozen", False):
+        return executable, "--_apply-helper"
+    return executable, "-m lidwork.cli --_apply-helper"
 
 
 def _task_user_id() -> str:
