@@ -31,6 +31,16 @@ The binaries are unsigned:
 - Windows:
   If SmartScreen appears, use `More info -> Run anyway`.
 
+Because they are unsigned, verify integrity/authenticity first — each release
+ships a `SHA256SUMS` file and signed build provenance:
+
+```bash
+shasum -a 256 -c SHA256SUMS                       # checksum
+gh attestation verify <file> --repo DinoZawrik/lidwork  # provenance
+```
+
+See [SECURITY.md](SECURITY.md) for the threat model and privilege design.
+
 ## Install
 
 ```bash
