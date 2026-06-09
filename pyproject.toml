@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lidwork"
+version = "0.1.0"
+description = "Tray toggle to keep a laptop running with the lid closed."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "Pillow",
+  "pystray",
+]
+
+[project.scripts]
+lidwork = "lidwork.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["lidwork*"]
+
+[tool.ruff]
+target-version = "py311"
