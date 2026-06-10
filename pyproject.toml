@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=61,<81"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lidwork"
-version = "0.2.0"
+version = "0.2.1"
 description = "Tray toggle to keep a laptop running with the lid closed."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -55,8 +55,8 @@ app = BUNDLE(
     info_plist={
         "CFBundleDisplayName": "lidwork",
         "CFBundleName": "lidwork",
-        "CFBundleShortVersionString": "0.2.0",
-        "CFBundleVersion": "0.2.0",
+        "CFBundleShortVersionString": "0.2.1",
+        "CFBundleVersion": "0.2.1",
         "LSUIElement": True,
     },
 )

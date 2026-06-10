@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import getpass
-import os
 import re
 import shutil
 import subprocess
@@ -182,8 +181,20 @@ def _system32(exe: str) -> str:
     Returns:
         The absolute path rooted at the current Windows system directory.
     """
-    root = os.environ.get("SystemRoot", r"C:\Windows")
-    return str(Path(root) / "System32" / exe)
+    return str(Path(_system_directory()) / exe)
+
+
+def _system_directory() -> str:
+    if sys.platform != "win32":
+        raise BackendError("Could not resolve the Windows system directory.")
+
+    import ctypes
+
+    buf = ctypes.create_unicode_buffer(260)
+    n = ctypes.windll.kernel32.GetSystemDirectoryW(buf, len(buf))
+    if n == 0 or n > len(buf):
+        raise BackendError("Could not resolve the Windows system directory.")
+    return buf.value
 
 
 def _program_files_helper_path() -> Path:
@@ -192,8 +203,56 @@ def _program_files_helper_path() -> Path:
     Returns:
         The Program Files destination for the copied frozen executable.
     """
-    root = Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
-    return root / "lidwork" / "lidwork.exe"
+    return Path(_program_files_directory()) / "lidwork" / "lidwork.exe"
+
+
+def _program_files_directory() -> str:
+    if sys.platform != "win32":
+        raise BackendError("Could not resolve Program Files.")
+
+    import ctypes
+    from ctypes import wintypes
+
+    class GUID(ctypes.Structure):
+        _fields_ = [
+            ("Data1", wintypes.DWORD),
+            ("Data2", wintypes.WORD),
+            ("Data3", wintypes.WORD),
+            ("Data4", wintypes.BYTE * 8),
+        ]
+
+    folderid_program_files = GUID(
+        0x905E63B6,
+        0xC1BF,
+        0x494E,
+        (wintypes.BYTE * 8)(0xB2, 0x9C, 0x65, 0xB7, 0x32, 0xD3, 0xD2, 0x1A),
+    )
+    shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+    ole32 = ctypes.WinDLL("ole32", use_last_error=True)
+
+    sh_get_known_folder_path = shell32.SHGetKnownFolderPath
+    sh_get_known_folder_path.argtypes = [
+        ctypes.POINTER(GUID),
+        wintypes.DWORD,
+        wintypes.HANDLE,
+        ctypes.POINTER(ctypes.c_wchar_p),
+    ]
+    sh_get_known_folder_path.restype = ctypes.c_long
+
+    co_task_mem_free = ole32.CoTaskMemFree
+    co_task_mem_free.argtypes = [ctypes.c_void_p]
+    co_task_mem_free.restype = None
+
+    path_ptr = ctypes.c_wchar_p()
+    hr = sh_get_known_folder_path(
+        ctypes.byref(folderid_program_files), 0, None, ctypes.byref(path_ptr)
+    )
+    if hr != 0 or not path_ptr:
+        raise BackendError("Could not resolve Program Files.")
+    try:
+        return ctypes.wstring_at(path_ptr)
+    finally:
+        co_task_mem_free(path_ptr)
 
 
 def _task_user_id() -> str:
@@ -266,7 +325,11 @@ def _activate_scheme(scheme_guid: str) -> None:
 
 
 def _validate_restore_value(value: int) -> None:
-    if value not in {0, 1, 2, 3}:
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or value not in {0, 1, 2, 3}
+    ):
         raise BackendError(f"Refusing to apply unexpected LIDACTION value: {value}")
 
 
@@ -346,6 +409,7 @@ def _run_elevated(executable: str, parameters: str, failure_message: str) -> Non
 
     see_mask_nocloseprocess = 0x00000040
     infinite = 0xFFFFFFFF
+    wait_object_0 = 0x00000000
     shell32 = ctypes.WinDLL("shell32", use_last_error=True)
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 
@@ -400,7 +464,12 @@ def _run_elevated(executable: str, parameters: str, failure_message: str) -> Non
         raise BackendError(failure_message)
 
     try:
-        wait_for_single_object(process_handle, infinite)
+        wait_result = wait_for_single_object(process_handle, infinite)
+        if wait_result != wait_object_0:
+            raise BackendError(
+                f"{failure_message} Wait failed: {wait_result}. "
+                f"Last error: {ctypes.get_last_error()}."
+            )
         exit_code = wintypes.DWORD()
         if not get_exit_code_process(process_handle, ctypes.byref(exit_code)):
             raise BackendError(failure_message)

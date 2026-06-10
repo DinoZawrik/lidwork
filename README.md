@@ -12,9 +12,10 @@ Prebuilt releases live at: <https://github.com/DinoZawrik/lidwork/releases>
   `lidwork.app` to `/Applications` or another stable folder before first launch.
   Intel Macs are not prebuilt — run from source (see Install below).
 - Windows:
-  Download `lidwork-windows-*.exe`, place it in a stable folder first, then run
-  it from there. If you later move the exe, run `lidwork.exe --setup` again
-  because the scheduled task stores an absolute path.
+  Download `lidwork-windows-*.exe` and run it. Run `lidwork --setup` once (UAC
+  prompt): setup copies the app into `%ProgramFiles%\lidwork` and registers the
+  scheduled task against that admin-owned copy, so you can delete the downloaded
+  exe afterward. Re-run `--setup` only after installing a new version.
 - Linux:
   Download the `lidwork-linux-*.tar.gz` archive, extract it, then run the
   `lidwork` binary from the extracted folder.
@@ -111,9 +112,10 @@ sudo pmset -a disablesleep 0
 - `--off` restores the exact snapshotted values and re-activates that scheme.
 - If the machine restarts while ON, the saved snapshot remains in the state file
   so `lidwork --off` can still restore it.
-- Put `lidwork.exe` in its long-term folder before running `lidwork --setup`.
-  If the exe moves later, re-run `lidwork --setup` so the scheduled task points
-  at the new path.
+- Setup (packaged build) copies `lidwork.exe` into `%ProgramFiles%\lidwork`
+  (admin-only) and points the scheduled task at that immutable copy, so the task
+  cannot be repointed at a user-writable binary. The downloaded exe is not
+  needed after setup; re-run `--setup` after upgrading.
 - For launch at login without Task Scheduler changes, place a shortcut to
   `lidwork.exe` in the user's Startup folder.
 
@@ -140,6 +142,7 @@ Windows power settings.
 
   ```powershell
   schtasks /delete /tn lidwork_apply /f
+  rmdir /s /q "%ProgramFiles%\lidwork"
   ```
 
 3. Remove the package:

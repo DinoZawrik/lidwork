@@ -99,6 +99,8 @@ def save_state(state: AppState) -> None:
 
 
 def _as_optional_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
     if isinstance(value, int):
         return value
     return None
@@ -108,4 +110,3 @@ def _as_optional_str(value: object) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
-

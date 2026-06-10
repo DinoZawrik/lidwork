@@ -45,6 +45,17 @@ gated behind an explicit one-time `lidwork --setup`:
 
 To remove the privileged setup, see "Uninstall" in the README.
 
+## Known limitations
+
+- **Windows, separate admin account.** Setup assumes the account that approves
+  the UAC elevation is the same account that will use `lidwork`. If you run as a
+  standard user and elevate with a *different* administrator account, the
+  scheduled task may be registered for the admin identity rather than yours, and
+  `--on`/`--off` may not drive the intended task. Single-user laptops where the
+  user is the administrator (the primary target) are unaffected.
+- **Linux** lid handling is best-effort (see README) and is not a security
+  boundary.
+
 ## Verifying your download
 
 Releases are **unsigned** (no paid code-signing certificate). Instead, every
